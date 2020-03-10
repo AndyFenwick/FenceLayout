@@ -38,7 +38,7 @@ public class FenceLayoutEditor : Editor
 				{
 					if (m_mainTerrain)
 					{
-						newPos.y = m_mainTerrain.SampleHeight(newPos);
+						newPos.y = SampleTerrainHeight(newPos);
 					}
 					m_fenceLayout.FencePoints[i] = newPos - m_fenceLayout.transform.position;
 				}
@@ -53,7 +53,7 @@ public class FenceLayoutEditor : Editor
 				for (int i = 0; i < m_fenceLayout.FencePoints.Count; i++)
 				{
 					Vector3 worldPos = m_fenceLayout.FencePoints[i] + m_fenceLayout.transform.position;
-					worldPos.y = m_mainTerrain.SampleHeight(worldPos);
+					worldPos.y = SampleTerrainHeight(worldPos);
 					m_fenceLayout.FencePoints[i] = worldPos - m_fenceLayout.transform.position;
 				}
 			}
@@ -133,7 +133,7 @@ public class FenceLayoutEditor : Editor
 			{
 				if (m_mainTerrain)
 				{
-					newPos.y = m_mainTerrain.SampleHeight(newPos);
+					newPos.y = SampleTerrainHeight(newPos);
 				}
 
 				m_fenceLayout.FencePoints[i] = newPos;
@@ -340,7 +340,7 @@ public class FenceLayoutEditor : Editor
 							float scaleVariance = Random.Range(m_fenceLayout.ScaleVariation.x, m_fenceLayout.ScaleVariation.y);
 
 							Vector3 createPos = lastPos + offset + step * i;
-							float y1 = m_mainTerrain.SampleHeight(createPos);
+							float y1 = SampleTerrainHeight(createPos);
 
 							createPos.y = y1;
 
@@ -363,8 +363,8 @@ public class FenceLayoutEditor : Editor
 						{
 							// Find both ends.
 							Vector3 createPos = lastPos + step * i;
-							float y1 = m_mainTerrain.SampleHeight(createPos);
-							float y2 = m_mainTerrain.SampleHeight(createPos + step);
+							float y1 = SampleTerrainHeight(createPos);
+							float y2 = SampleTerrainHeight(createPos + step);
 
 							if (m_fenceLayout.UseShear)
 							{
@@ -451,5 +451,13 @@ public class FenceLayoutEditor : Editor
 	{
 		int idx = Random.Range(0, m_fenceLayout.FencePrefabs.Length);
 		return m_fenceLayout.FencePrefabs[idx] != null ? m_fenceLayout.FencePrefabs[idx] : m_fenceLayout.FencePrefabs[0];
+	}
+
+	// --------------------------------------------------------------------------
+
+	private float SampleTerrainHeight(Vector3 pos)
+	{
+		// Ensure terrain Y position is included.
+		return m_mainTerrain.SampleHeight(pos) + m_mainTerrain.GetPosition().y;
 	}
 }
