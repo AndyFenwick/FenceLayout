@@ -8,7 +8,7 @@ using UnityEngine;
 public class FenceLayoutEditor : Editor
 {
 	private FenceLayout m_fenceLayout;
-	private Terrain m_mainTerrain;
+	private Terrain[] m_terrains;
 
 	private FenceLayout.EditMode m_editMode = FenceLayout.EditMode.None;
 	private Vector3 m_mousePos;
@@ -36,10 +36,7 @@ public class FenceLayoutEditor : Editor
 
 				if (newPos != worldPos)
 				{
-					if (m_mainTerrain)
-					{
-						newPos.y = SampleTerrainHeight(newPos);
-					}
+					newPos.y = SampleTerrainHeight(newPos);
 					m_fenceLayout.FencePoints[i] = newPos - m_fenceLayout.transform.position;
 				}
 			}
@@ -48,14 +45,11 @@ public class FenceLayoutEditor : Editor
 		if (m_fenceLayout.transform.hasChanged)
 		{
 			// Move all points onto the ground.
-			if (m_mainTerrain)
+			for (int i = 0; i < m_fenceLayout.FencePoints.Count; i++)
 			{
-				for (int i = 0; i < m_fenceLayout.FencePoints.Count; i++)
-				{
-					Vector3 worldPos = m_fenceLayout.FencePoints[i] + m_fenceLayout.transform.position;
-					worldPos.y = SampleTerrainHeight(worldPos);
-					m_fenceLayout.FencePoints[i] = worldPos - m_fenceLayout.transform.position;
-				}
+				Vector3 worldPos = m_fenceLayout.FencePoints[i] + m_fenceLayout.transform.position;
+				worldPos.y = SampleTerrainHeight(worldPos);
+				m_fenceLayout.FencePoints[i] = worldPos - m_fenceLayout.transform.position;
 			}
 
 			changed = true;
@@ -131,11 +125,7 @@ public class FenceLayoutEditor : Editor
 
 			if (newPos != m_fenceLayout.FencePoints[i])
 			{
-				if (m_mainTerrain)
-				{
-					newPos.y = SampleTerrainHeight(newPos);
-				}
-
+				newPos.y = SampleTerrainHeight(newPos);
 				m_fenceLayout.FencePoints[i] = newPos;
 			}
 
@@ -188,7 +178,7 @@ public class FenceLayoutEditor : Editor
 	public void OnEnable()
 	{
 		m_fenceLayout = target as FenceLayout;
-		m_mainTerrain = FindObjectOfType<Terrain>();
+		m_terrains = FindObjectsOfType<Terrain>();
 
 		SceneView.duringSceneGui += InputUpdate;
 	}
@@ -457,7 +447,19 @@ public class FenceLayoutEditor : Editor
 
 	private float SampleTerrainHeight(Vector3 pos)
 	{
-		// Ensure terrain Y position is included.
-		return m_mainTerrain.SampleHeight(pos) + m_mainTerrain.GetPosition().y;
+		// Find which terrain we're in. Assumes that no terrains overlap in XZ.
+		foreach (Terrain terrain in m_terrains)
+		{
+			Vector3 minPos = terrain.GetPosition();
+			Vector3 maxPos = minPos + terrain.terrainData.size;
+
+			if (pos.x >= minPos.x && pos.x < maxPos.x && pos.z >= minPos.z && pos.z < maxPos.z)
+			{
+				// Ensure terrain Y position is included.
+				return terrain.SampleHeight(pos) + terrain.GetPosition().y;
+			}
+		}
+
+		return 0.0f;
 	}
 }
