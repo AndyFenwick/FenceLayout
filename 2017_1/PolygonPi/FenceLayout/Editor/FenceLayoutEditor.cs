@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEditor;
-using UnityEditor.Experimental.SceneManagement;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -180,14 +179,14 @@ public class FenceLayoutEditor : Editor
 		m_fenceLayout = target as FenceLayout;
 		m_terrains = FindObjectsOfType<Terrain>();
 
-		SceneView.duringSceneGui += InputUpdate;
+		SceneView.onSceneGUIDelegate += InputUpdate;
 	}
 
 	// --------------------------------------------------------------------------
 
 	public void OnDisable()
 	{
-		SceneView.duringSceneGui -= InputUpdate;
+		SceneView.onSceneGUIDelegate -= InputUpdate;
 	}
 
 	// --------------------------------------------------------------------------
@@ -334,9 +333,7 @@ public class FenceLayoutEditor : Editor
 
 							createPos.y = y1;
 
-							int idx = Random.Range(0, m_fenceLayout.FencePrefabs.Length);
-
-							Transform fence = PrefabUtility.InstantiatePrefab(GetRandomFencePrefab(), m_fenceLayout.transform) as Transform;
+							Transform fence = Object.Instantiate(GetRandomFencePrefab(), m_fenceLayout.transform) as Transform;
 							if (fence)
 							{
 								fence.position = createPos;
@@ -381,7 +378,7 @@ public class FenceLayoutEditor : Editor
 									t2.transform.localRotation = Quaternion.Euler(-45.0f, 0, 0);
 									t2.transform.localScale = new Vector3(1.0f, Mathf.Sqrt(2.0f), Mathf.Sqrt(2.0f) / Mathf.Sin(shearAngleRad));
 
-									Transform fence = PrefabUtility.InstantiatePrefab(GetRandomFencePrefab(), t2.transform) as Transform;
+									Transform fence = Object.Instantiate(GetRandomFencePrefab(), t2.transform) as Transform;
 									if (fence)
 									{
 										fence.localScale = new Vector3(m_fenceLayout.FenceScale.x, m_fenceLayout.FenceScale.y, m_fenceLayout.FenceScale.z * scale);
@@ -401,7 +398,7 @@ public class FenceLayoutEditor : Editor
 								offset += rot * offset;
 								createPos += offset;
 
-								Transform fence = PrefabUtility.InstantiatePrefab(GetRandomFencePrefab()) as Transform;
+								Transform fence = Object.Instantiate(GetRandomFencePrefab()) as Transform;
 								if (fence)
 								{
 									fence.localPosition = createPos;
@@ -424,7 +421,7 @@ public class FenceLayoutEditor : Editor
 		{
 			if (m_fenceLayout.FencePoints.Count > 0)
 			{
-				Transform post = PrefabUtility.InstantiatePrefab(m_fenceLayout.PostPrefab, m_fenceLayout.transform) as Transform;
+				Transform post = Object.Instantiate(m_fenceLayout.PostPrefab, m_fenceLayout.transform) as Transform;
 				if (post)
 				{
 					post.localPosition = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1];
