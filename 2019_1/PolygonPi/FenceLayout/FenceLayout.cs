@@ -26,13 +26,11 @@ public class FenceLayout : MonoBehaviour
 	};
 	private EditMode m_currentEditMode = EditMode.None;
 	private Vector3 m_mousePos;
-	private Terrain m_mainTerrain;
 
 	// --------------------------------------------------------------------------
 
 	public void Start()
 	{
-		m_mainTerrain = FindObjectOfType<Terrain>();
 	}
 
 	// --------------------------------------------------------------------------

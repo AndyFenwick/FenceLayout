@@ -334,8 +334,6 @@ public class FenceLayoutEditor : Editor
 
 							createPos.y = y1;
 
-							int idx = Random.Range(0, m_fenceLayout.FencePrefabs.Length);
-
 							Transform fence = PrefabUtility.InstantiatePrefab(GetRandomFencePrefab(), m_fenceLayout.transform) as Transform;
 							if (fence)
 							{
