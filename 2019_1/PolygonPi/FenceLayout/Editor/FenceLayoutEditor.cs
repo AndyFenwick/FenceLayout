@@ -216,7 +216,7 @@ public class FenceLayoutEditor : Editor
 
 					if (e.control)
 					{
-						Ray r = Camera.current.ScreenPointToRay(new Vector3(e.mousePosition.x, -e.mousePosition.y + Camera.current.pixelHeight));
+						Ray r = HandleUtility.GUIPointToWorldRay(e.mousePosition);
 
 						RaycastHit result;
 						if (Physics.Raycast(r, out result))
