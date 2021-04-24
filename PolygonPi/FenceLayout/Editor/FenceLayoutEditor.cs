@@ -104,6 +104,7 @@ public class FenceLayoutEditor : Editor
 		m_fenceLayout.FenceRotation = EditorGUILayout.FloatField("Fence rotation", m_fenceLayout.FenceRotation);
 		m_fenceLayout.FenceLength = EditorGUILayout.FloatField("Fence length", m_fenceLayout.FenceLength);
 		m_fenceLayout.FenceScale = EditorGUILayout.Vector3Field("Fence scale", m_fenceLayout.FenceScale);
+		m_fenceLayout.CompleteLoop = EditorGUILayout.Toggle("Complete loop", m_fenceLayout.CompleteLoop);
 		m_fenceLayout.ObjectMode = EditorGUILayout.Toggle("Object mode", m_fenceLayout.ObjectMode);
 
 		if (m_fenceLayout.ObjectMode)
@@ -297,9 +298,10 @@ public class FenceLayoutEditor : Editor
 		{
 			Random.InitState(123);
 
-			for (int p = 0; p < m_fenceLayout.FencePoints.Count; p++)
+			int numLines = m_fenceLayout.FencePoints.Count + (m_fenceLayout.CompleteLoop ? 1 : 0);
+			for (int p = 0; p < numLines; p++)
 			{
-				Vector3 point = m_fenceLayout.FencePoints[p] + m_fenceLayout.transform.position;
+				Vector3 point = m_fenceLayout.FencePoints[p % m_fenceLayout.FencePoints.Count] + m_fenceLayout.transform.position;
 
 				if (gotLast)
 				{
@@ -325,8 +327,13 @@ public class FenceLayoutEditor : Editor
 
 					if (m_fenceLayout.ObjectMode)
 					{
-						// Draw the final 'fence post' on the last stretch.
-						int fenceCount = numFencesInt + ((p == (m_fenceLayout.FencePoints.Count - 1)) ? 1 : 0);
+						// Draw the final 'fence post' on the last stretch if not a complete loop.
+						int fenceCount = numFencesInt;
+						if (!m_fenceLayout.CompleteLoop && p == (m_fenceLayout.FencePoints.Count - 1))
+						{
+							fenceCount++;
+						}
+
 						Quaternion offsetRot = Quaternion.Euler(0, rotDeg, 0);
 
 						for (int i = 0; i < fenceCount; i++)
@@ -434,7 +441,7 @@ public class FenceLayoutEditor : Editor
 		}
 
 		// Create the final post, following the rot/scale of the fence.
-		if (m_fenceLayout.PostPrefab)
+		if (!m_fenceLayout.CompleteLoop && !m_fenceLayout.ObjectMode && m_fenceLayout.PostPrefab)
 		{
 			if (m_fenceLayout.FencePoints.Count > 0)
 			{

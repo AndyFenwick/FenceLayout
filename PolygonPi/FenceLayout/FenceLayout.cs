@@ -12,6 +12,7 @@ public class FenceLayout : MonoBehaviour
 	public float FenceRotation = 0.0f;
 	public float FenceLength = 2.0f;
 	public Vector3 FenceScale = new Vector3(1, 1, 1);
+	public bool CompleteLoop = false;
 	public bool ObjectMode = false;
 	public Vector2 PositionVariation = new Vector2(0, 0);
 	public Vector2 RotationVariation = new Vector2(-180, 180);
