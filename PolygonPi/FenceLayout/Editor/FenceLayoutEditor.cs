@@ -15,6 +15,9 @@ public class FenceLayoutEditor : Editor
 	private FenceLayout.EditMode m_editMode = FenceLayout.EditMode.None;
 	private Vector3 m_mousePos;
 
+	private bool ShowRaycastSettings = false;
+	private bool ShowPoints = false;
+
 	// --------------------------------------------------------------------------
 
 	protected virtual void OnSceneGUI()
@@ -118,53 +121,84 @@ public class FenceLayoutEditor : Editor
 			m_fenceLayout.UseShear = EditorGUILayout.Toggle("Use shear", m_fenceLayout.UseShear);
 		}
 
-		GUILayout.BeginVertical();
-		GUILayout.Label("Points");
+		m_fenceLayout.UseRaycast = EditorGUILayout.Toggle("Use raycast", m_fenceLayout.UseRaycast);
 
-		for (int i = 0; i < m_fenceLayout.FencePoints.Count; i++)
+		if (m_fenceLayout.UseRaycast)
 		{
-			GUILayout.BeginHorizontal();
-			Vector3 newPos = EditorGUILayout.Vector3Field("Point" + i, m_fenceLayout.FencePoints[i]);
+			m_fenceLayout.RaycastOffsetMax = EditorGUILayout.FloatField("Raycast offset max", m_fenceLayout.RaycastOffsetMax);
+			m_fenceLayout.RaycastOffsetMin = EditorGUILayout.FloatField("Raycast offset min", m_fenceLayout.RaycastOffsetMin);
 
-			if (newPos != m_fenceLayout.FencePoints[i])
+			ShowRaycastSettings = EditorGUILayout.Foldout(ShowRaycastSettings, "Layer settings");
+
+			if (ShowRaycastSettings)
 			{
-				newPos.y = SampleTerrainHeight(newPos);
-				m_fenceLayout.FencePoints[i] = newPos;
+				for (int i = 0; i < 31; i++)
+				{
+					string layerName = LayerMask.LayerToName(i);
+					if (layerName.Length > 0)
+					{
+						bool wasSet = (m_fenceLayout.LayerMask & (1 << i)) != 0;
+						if (EditorGUILayout.Toggle("Layer: " + layerName, wasSet))
+						{
+							m_fenceLayout.LayerMask |= 1 << i;
+						}
+						else
+						{
+							m_fenceLayout.LayerMask &= ~(1 << i);
+
+						}
+					}
+				}
+			}
+		}
+
+		ShowPoints = EditorGUILayout.Foldout(ShowPoints, "Manually edit points");
+
+		if (ShowPoints)
+		{
+			for (int i = 0; i < m_fenceLayout.FencePoints.Count; i++)
+			{
+				GUILayout.BeginHorizontal();
+				Vector3 newPos = EditorGUILayout.Vector3Field("Point" + i, m_fenceLayout.FencePoints[i]);
+
+				if (newPos != m_fenceLayout.FencePoints[i])
+				{
+					newPos.y = SampleTerrainHeight(newPos);
+					m_fenceLayout.FencePoints[i] = newPos;
+				}
+
+				if (GUILayout.Button("X", GUILayout.Width(15)))
+				{
+					m_fenceLayout.FencePoints.RemoveAt(i);
+					EditorUtility.SetDirty(m_fenceLayout);
+
+				}
+
+				GUILayout.EndHorizontal();
 			}
 
-			if (GUILayout.Button("X", GUILayout.Width(15)))
+			if (GUILayout.Button("Add point"))
 			{
-				m_fenceLayout.FencePoints.RemoveAt(i);
+				Vector3 point;
+				if (m_fenceLayout.FencePoints.Count > 1)
+				{
+					Vector3 dir = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1] - m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 2];
+					point = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1] + dir.normalized * 3.0f;
+				}
+				else if (m_fenceLayout.FencePoints.Count > 0)
+				{
+					point = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1];
+					point.x += 3.0f;
+				}
+				else
+				{
+					point = new Vector3();
+				}
+
+				m_fenceLayout.FencePoints.Add(point);
 				EditorUtility.SetDirty(m_fenceLayout);
-
 			}
-
-			GUILayout.EndHorizontal();
 		}
-
-		if (GUILayout.Button("Add point"))
-		{
-			Vector3 point;
-			if (m_fenceLayout.FencePoints.Count > 1)
-			{
-				Vector3 dir = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1] - m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 2];
-				point = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1] + dir.normalized * 3.0f;
-			}
-			else if (m_fenceLayout.FencePoints.Count > 0)
-			{
-				point = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1];
-				point.x += 3.0f;
-			}
-			else
-			{
-				point = new Vector3();
-			}
-
-			m_fenceLayout.FencePoints.Add(point);
-			EditorUtility.SetDirty(m_fenceLayout);
-		}
-
-		GUILayout.EndVertical();
 
 		if (EditorGUI.EndChangeCheck())
 		{
@@ -472,19 +506,51 @@ public class FenceLayoutEditor : Editor
 
 	private float SampleTerrainHeight(Vector3 pos)
 	{
-		// Find which terrain we're in. Assumes that no terrains overlap in XZ.
-		foreach (Terrain terrain in m_terrains)
+		if (m_fenceLayout.UseRaycast)
 		{
-			Vector3 minPos = terrain.GetPosition();
-			Vector3 maxPos = minPos + terrain.terrainData.size;
+			// Ray-cast against objects in the scene.
+			RaycastHit hit;
+			Vector3 rayStart = pos;
+			rayStart.y += m_fenceLayout.RaycastOffsetMax;
+			float rayLength = m_fenceLayout.RaycastOffsetMax - m_fenceLayout.RaycastOffsetMin;
 
-			if (pos.x >= minPos.x && pos.x < maxPos.x && pos.z >= minPos.z && pos.z < maxPos.z)
+			// Raycast may hit a previously placed fence. Ignore hits on children.
+			bool hitSelf = false;
+
+			do
 			{
-				// Ensure terrain Y position is included.
-				return terrain.SampleHeight(pos) + terrain.GetPosition().y;
+				if (Physics.Raycast(rayStart, Vector3.down, out hit, rayLength, m_fenceLayout.LayerMask))
+				{
+					if (hit.transform.IsChildOf(m_fenceLayout.transform))
+					{
+						// Start the test again from slightly further along.
+						hitSelf = true;
+						rayStart.y = hit.point.y - rayLength * 0.001f;
+					}
+					else
+					{
+						return hit.point.y;
+					}
+				}
+			}
+			while (hitSelf);
+		}
+		else
+		{
+			// Find which terrain we're in. Assumes that no terrains overlap in XZ.
+			foreach (Terrain terrain in m_terrains)
+			{
+				Vector3 minPos = terrain.GetPosition();
+				Vector3 maxPos = minPos + terrain.terrainData.size;
+
+				if (pos.x >= minPos.x && pos.x < maxPos.x && pos.z >= minPos.z && pos.z < maxPos.z)
+				{
+					// Ensure terrain Y position is included.
+					return terrain.SampleHeight(pos) + terrain.GetPosition().y;
+				}
 			}
 		}
 
-		return 0.0f;
+		return pos.y;
 	}
 }
