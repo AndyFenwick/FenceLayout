@@ -514,26 +514,29 @@ public class FenceLayoutEditor : Editor
 			rayStart.y += m_fenceLayout.RaycastOffsetMax;
 			float rayLength = m_fenceLayout.RaycastOffsetMax - m_fenceLayout.RaycastOffsetMin;
 
-			// Raycast may hit a previously placed fence. Ignore hits on children.
-			bool hitSelf = false;
-
-			do
+			if (rayLength > 0)
 			{
-				if (Physics.Raycast(rayStart, Vector3.down, out hit, rayLength, m_fenceLayout.LayerMask))
+				// Raycast may hit a previously placed fence. Ignore hits on children.
+				bool hitSelf = false;
+
+				do
 				{
-					if (hit.transform.IsChildOf(m_fenceLayout.transform))
+					if (Physics.Raycast(rayStart, Vector3.down, out hit, rayLength, m_fenceLayout.LayerMask))
 					{
-						// Start the test again from slightly further along.
-						hitSelf = true;
-						rayStart.y = hit.point.y - rayLength * 0.001f;
-					}
-					else
-					{
-						return hit.point.y;
+						if (hit.transform.IsChildOf(m_fenceLayout.transform))
+						{
+							// Start the test again from slightly further along.
+							hitSelf = true;
+							rayStart.y = hit.point.y - rayLength * 0.001f;
+						}
+						else
+						{
+							return hit.point.y;
+						}
 					}
 				}
+				while (hitSelf);
 			}
-			while (hitSelf);
 		}
 		else
 		{
