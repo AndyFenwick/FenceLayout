@@ -34,12 +34,6 @@ public class FenceLayout : MonoBehaviour
 
 	// --------------------------------------------------------------------------
 
-	public void Start()
-	{
-	}
-
-	// --------------------------------------------------------------------------
-
 	private void OnDrawGizmosSelected()
 	{
 		Vector3 lastPos = new Vector3();

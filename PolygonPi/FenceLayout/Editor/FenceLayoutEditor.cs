@@ -517,10 +517,12 @@ public class FenceLayoutEditor : Editor
 			if (rayLength > 0)
 			{
 				// Raycast may hit a previously placed fence. Ignore hits on children.
-				bool hitSelf = false;
+				bool hitSelf;
 
 				do
 				{
+					hitSelf = false;
+
 					if (Physics.Raycast(rayStart, Vector3.down, out hit, rayLength, m_fenceLayout.LayerMask))
 					{
 						if (hit.transform.IsChildOf(m_fenceLayout.transform))
