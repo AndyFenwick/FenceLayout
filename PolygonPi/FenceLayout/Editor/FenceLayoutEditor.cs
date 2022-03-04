@@ -119,6 +119,7 @@ public class FenceLayoutEditor : Editor
 		else
 		{
 			m_fenceLayout.UseShear = EditorGUILayout.Toggle("Use shear", m_fenceLayout.UseShear);
+			m_fenceLayout.AllowStretching = EditorGUILayout.Toggle("Allow stretching", m_fenceLayout.AllowStretching);
 		}
 
 		m_fenceLayout.UseRaycast = EditorGUILayout.Toggle("Use raycast", m_fenceLayout.UseRaycast);
@@ -348,8 +349,18 @@ public class FenceLayoutEditor : Editor
 
 					// Stretch to fit.
 					int numFencesInt = (int)Mathf.Max(1, Mathf.Round(numFences));
-					float fenceLength = toNext.magnitude / numFencesInt;
-					scale = fenceLength / scaledLength;
+					float fenceLength;
+
+					if (m_fenceLayout.AllowStretching)
+					{
+						fenceLength = toNext.magnitude / numFencesInt;
+						scale = fenceLength / scaledLength;
+					}
+					else
+					{
+						fenceLength = m_fenceLayout.FenceLength;
+						scale = 1.0f;
+					}
 
 					float angle = Mathf.Atan2(toNext.z, toNext.x);
 					float rotDeg = (-angle * Mathf.Rad2Deg) + 90.0f;
@@ -467,9 +478,22 @@ public class FenceLayoutEditor : Editor
 							}
 						}
 					}
+
+					if (m_fenceLayout.ObjectMode)
+					{
+						lastPos = point;
+					}
+					else
+					{
+						// If not stretching, carry on from where the last fence actually ends.
+						lastPos = lastPos + step * numFencesInt;
+					}
+				}
+				else
+				{
+					lastPos = point;
 				}
 
-				lastPos = point;
 				gotLast = true;
 			}
 		}
@@ -484,12 +508,19 @@ public class FenceLayoutEditor : Editor
 #else
 				Transform post = Object.Instantiate(m_fenceLayout.PostPrefab, m_fenceLayout.transform) as Transform;
 #endif
-				if (post)
+				if (m_fenceLayout.AllowStretching || !gotLast)
 				{
 					post.localPosition = m_fenceLayout.FencePoints[m_fenceLayout.FencePoints.Count - 1];
-					post.localRotation = rot;
-					post.localScale = m_fenceLayout.FenceScale * scale;
 				}
+				else
+				{
+					Vector3 postPos = lastPos - m_fenceLayout.transform.position;
+					postPos.y = SampleTerrainHeight(lastPos) - m_fenceLayout.transform.position.y;
+					post.localPosition = postPos;
+				}
+
+				post.localRotation = rot;
+				post.localScale = m_fenceLayout.FenceScale * scale;
 			}
 		}
 	}

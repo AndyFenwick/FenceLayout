@@ -18,6 +18,7 @@ public class FenceLayout : MonoBehaviour
 	public Vector2 RotationVariation = new Vector2(-180, 180);
 	public Vector2 ScaleVariation = new Vector2(1, 1);
 	public bool UseShear = true;
+	public bool AllowStretching = true;
 	public bool UseRaycast = false;
 	public float RaycastOffsetMax = 1.0f;
 	public float RaycastOffsetMin = -1.0f;
